@@ -238,3 +238,87 @@ Toggling `INCLUDE_TAU_T` and `INCLUDE_LAMBDA_AMP_Z` at the top of `compute_fim.p
 **The Option D SWAT model is identifiable** under the recommended reduced parameter set (25 free + 2 pinned + 6 noise-only). The filtering problem is well-posed. Two structural degeneracies were found and resolved (τ_T scaling, `λ_amp_W ↔ λ_amp_Z` product). Several near-degeneracies remain (cond number ~5×10⁹) but they don't obstruct inference if informative priors are used on the Stuart-Landau block.
 
 The Lyapunov stability analysis (issue #6, Part 2) can now proceed against this identifiable parameterisation.
+
+---
+
+## Inference-time recommendations (for SMC² / EKF / particle-filter repos)
+
+**Pinned parameters (do NOT infer):**
+
+| Parameter | Pinned value | Reason |
+|:---|---:|:---|
+| `τ_T` | 2.0 days (= 48 h) | Stuart-Landau time-vs-rate scaling degeneracy. Physiological constant from circadian biology — well-measured independently. |
+| `λ_amp_Z` | 8.0 | Product-only identifiability with `λ_amp_W` (only `amp_W · amp_Z` enters E). Pinning the Z-side and inferring `λ_amp_W` resolves the degeneracy. |
+
+**Informative priors for the Stuart-Landau block (`μ_0`, `μ_E`, `η`):**
+
+The three Stuart-Landau parameters are mutually correlated (~0.95) — they jointly determine the bifurcation parameter `μ(E) = μ_0 + μ_E·E` and the equilibrium amplitude `T* = √(μ_max / η)`. Without informative priors, joint inference will be slow to converge and the marginal posteriors will be inflated. Recommended priors:
+
+```
+μ_0 ~ −LogNormal(log 0.5, 0.20)        # weakly negative, ~exp(±20%) around -0.5
+μ_E ~ LogNormal(log 1.0, 0.20)         # positive, ~exp(±20%) around 1.0
+η   ~ LogNormal(log 0.5, 0.30)         # positive, slightly looser
+```
+
+These priors enforce the structural constraints (`μ_0 < 0`, `μ_E > 0`, `η > 0`) and concentrate on physiologically-grounded values from the spec while permitting reasonable patient-to-patient variation.
+
+**Optional reparameterisation (cleaner, recommended for new inference code):**
+
+Trade `(μ_0, μ_E, η)` for `(T*, μ_max, μ_excursion)`:
+
+```
+T*           = √(μ_max / η)              # equilibrium amplitude at full entrainment
+μ_max        = μ_0 + μ_E                 # peak bifurcation at E=1
+μ_excursion  = μ_max − μ_0 = μ_E         # how much E modulates μ
+```
+
+These are directly observable from data and orthogonal in the limit. Inverse map back to canonical parameters: `η = μ_max / T*²`, `μ_0 = μ_max − μ_E`. Informative priors on `(T*, μ_max)`:
+
+```
+T*    ~ LogNormal(log 1.0, 0.20)        # equilibrium amplitude near 1.0
+μ_max ~ LogNormal(log 0.5, 0.20)        # super-critical at full entrainment
+```
+
+This reparameterisation eliminates the Stuart-Landau internal aliasing and makes the marginal posteriors interpretable.
+
+**`λ ↔ κ` aliasing (corr 0.996):**
+
+Circadian forcing amplitude `λ` and Z → W inhibition `κ` both control W's daily oscillation amplitude. Their effects on observations are nearly indistinguishable. Two practical resolutions:
+
+1. **Pin `κ` to its spec value (6.67)**, treat it as a structural coupling constant rather than a free parameter. Standard practice in SWAT-class models — `κ` is the W-Z reciprocal-inhibition gain, often treated as an architecture-level constant.
+2. **Tight LogNormal priors on both**:
+   ```
+   λ ~ LogNormal(log 32.0, 0.10)        # very tight (~10%)
+   κ ~ LogNormal(log 6.67, 0.10)
+   ```
+   Allows inference of small per-subject deviations without exploiting the aliasing direction.
+
+**Per-subject vs population-level parameters:**
+
+In the SMC² hierarchical-inference setting:
+
+| Level | Parameters | Notes |
+|:---|:---|:---|
+| **Per subject** | `V_h, V_n, V_c, T_0` | The clinical state being inferred. Per-subject priors based on population distribution. |
+| **Per subject (initial state)** | `W_0, Z̃_0, a_0` | Latent initial conditions. Tight priors centered on phase-of-day. |
+| **Universal (cohort-level)** | `μ_0, μ_E, η, V_n_scale, λ_amp_W, α_T` | Stuart-Landau and entrainment-formula params. Informative priors as above. |
+| **Universal (architectural)** | `κ, λ, γ_3, β_Z, A_scale, φ_0, τ_W, τ_Z, τ_a, c_tilde, δ_c, λ_base, λ_step, W_thresh, HR_base, α_HR, s_base, α_s, β_s` | Spec defaults; tight priors around spec values. Can be pinned in a first-pass inference. |
+| **Pinned (do not infer)** | `τ_T = 2.0`, `λ_amp_Z = 8.0` | Per identifiability analysis above. |
+
+**Diffusion temperatures (`T_W, T_Z, T_a, T_T`) and observation noise stds (`σ_HR, σ_s`):**
+
+These six parameters did not enter this Jacobian-based FIM and need a separate variance-residual or particle-filter-based identifiability analysis. **Recommendation for first-pass SMC²:** pin them at the spec values (`T_W=T_a=0.24, T_Z=1.2, T_T=0.0024, σ_HR=8, σ_s=15` — the default Option D dictionary). They can be jointly estimated in a second pass once the drift parameters have settled.
+
+**Operating-point design for the inference dataset:**
+
+Per the FIM analysis, the most-informative subjects to include are those whose `V_h` spans the range `[0.3, 1.0]` (so the unsaturated regime probes `λ_amp_W`) and whose `V_n` spans `[0, 3]` (so `damp(V_n)` is informative for `V_n_scale`). Patient population variation should naturally provide this; if not, designed treatment protocols (titrating V_h up over weeks) provide the same information.
+
+**Summary table — what to do with each parameter:**
+
+| Action | Parameters |
+|:---|:---|
+| **Pin** | `τ_T`, `λ_amp_Z`, plus `T_*` and `σ_*` for first pass |
+| **Strong informative prior** | `μ_0`, `μ_E`, `η`, `λ`, `κ` (or pin `κ` as structural) |
+| **Moderate informative prior** | `λ_amp_W`, `V_n_scale`, `α_T`, `γ_3`, `β_Z`, `A_scale`, `φ_0` |
+| **Weak/data-driven prior** | `τ_W`, `τ_Z`, `τ_a`, observation-channel params |
+| **Per-subject (inferred)** | `V_h`, `V_n`, `V_c`, `T_0`, initial state |
