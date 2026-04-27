@@ -8,26 +8,43 @@ This library applies a battery of monotonicity and clinical-scenario tests to ev
 
 ## Layout
 
-```
-src/model_validation/        # the package
-├── runner.py               # t_end_under_constant_controls — central fixture
-├── snapshot.py             # pulls upstream model code, writes manifest
-└── models/swat/            # currently SWAT only (one model per subdir)
-    ├── vendored_dynamics.py
-    └── vendored_parameters.py
+The repo is organised by **per-model** directories so a new model
+(FSA-high-res, in flight) drops in alongside SWAT without overlap.
 
-tests/swat/                  # 9 gating tests, ported from
-                             # Python-Model-OT-Control's upstream_gating_tests.md
-snapshots/manifest.json      # commit-hash → tests-passed status
-docs/                        # vendoring workflow, how to add a test
 ```
+how_to_add_a_new_validation_model/   guide for landing a new model (5 docs)
+src/model_validation/                model-agnostic harness
+├── runner.py                       generic ODE/SDE solver helpers
+├── snapshot.py                     vendoring helper
+├── clinician_plots.py              generic plot suite
+└── models/<model>/                 per-model vendored dynamics + params
+tests/<model>/                      per-model pytest gating suite
+identifiability/<model>/            per-model Fisher-info analysis
+stability/<model>/                  per-model Lyapunov sweep
+scripts/<model>/                    per-model ad-hoc calibration scripts (optional)
+docs/<model>/                       per-model clinician views + write-ups (optional)
+snapshots/manifest.json             multi-model snapshot registry (schema v2)
+.github/workflows/<model>_validation.yml   per-model CI
+```
+
+Currently populated for `<model> = swat`. Adding a new model is purely
+additive — see [`how_to_add_a_new_validation_model/`](how_to_add_a_new_validation_model/).
 
 ## Vendoring workflow
 
-1. Snapshot upstream: `python -m model_validation.snapshot --upstream <commit-sha>` copies `models/swat/_dynamics.py`, `simulation.py::PARAM_SET_*`, `INIT_STATE_*` into `vendored_*.py` and records the commit hash in `snapshots/manifest.json`.
-2. Validate: `pytest tests/`. CI does this automatically.
-3. Tag: passing snapshots are auto-tagged `validation-passed-<upstream-sha>-<date>`.
-4. Consume: `Python-Model-OT-Control`'s vendor-sync script reads this repo's `manifest.json` and refuses to bump its `_vendored_models/swat/` unless the source commit is marked passed.
+1. **Snapshot upstream:** copy the model's drift / diffusion / parameters
+   from [Python-Model-Development-Simulation](https://github.com/ajaytalati/Python-Model-Development-Simulation)
+   into `src/model_validation/models/<model>/vendored_*.py` and append
+   an entry under `models.<model>.snapshots` in `snapshots/manifest.json`
+   (status `pre-fix` until validated).
+2. **Validate:** `pytest tests/<model>/` + `python identifiability/<model>/compute_fim.py`
+   + `python stability/<model>/corner_case_sweep.py`. All must exit 0.
+   CI does this automatically on push / PR.
+3. **Tag:** when CI passes on `main`, the workflow auto-tags the commit
+   `<model>-validated-<date>-<short-sha>`.
+4. **Consume:** `Python-Model-OT-Control`'s vendor-sync script reads
+   this repo's `snapshots/manifest.json` and the tag list; it only
+   bumps `_vendored_models/<model>/` from a commit marked `validated`.
 
 ## Running locally
 
@@ -36,11 +53,15 @@ git clone https://github.com/ajaytalati/Python-Model-Validation.git
 cd Python-Model-Validation
 pip install -e .[dev]
 
-# Run all tests against the current snapshot:
+# Run SWAT gating tests against the current snapshot:
 pytest tests/swat/
 
-# Run against the Option C variant:
+# Run SWAT gating tests against the Option C variant:
 pytest --variant option-c tests/swat/
+
+# Run SWAT identifiability + stability:
+python identifiability/swat/compute_fim.py
+python stability/swat/corner_case_sweep.py
 
 # Run the lambda-sensitivity sweep:
 python scripts/swat/option_c_lambda_sweep.py
