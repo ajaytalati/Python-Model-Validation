@@ -228,7 +228,7 @@ The 4 latent diffusion temperatures `T_W, T_Z, T_a, T_T` and 2 observation noise
 
 ```bash
 cd Python-Model-Validation
-python identifiability/compute_fim.py
+python identifiability/swat/compute_fim.py
 ```
 
 Toggling `INCLUDE_TAU_T` and `INCLUDE_LAMBDA_AMP_Z` at the top of `compute_fim.py` reproduces the three runs above.

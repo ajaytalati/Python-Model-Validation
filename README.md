@@ -43,7 +43,7 @@ pytest tests/swat/
 pytest --variant option-c tests/swat/
 
 # Run the lambda-sensitivity sweep:
-python scripts/option_c_lambda_sweep.py
+python scripts/swat/option_c_lambda_sweep.py
 ```
 
 ## License

@@ -1,7 +1,7 @@
-name: Option D validation
+name: SWAT validation
 
 # Re-runs the SWAT gating tests, the Fisher-information identifiability
-# analysis, and the Lyapunov stability sweep whenever Option D model code
+# analysis, and the Lyapunov stability sweep whenever SWAT model code
 # changes. Catches structural regressions before they reach OT-Control.
 
 on:
@@ -9,20 +9,20 @@ on:
     branches: [main]
     paths:
       - "src/model_validation/**"
-      - "tests/**"
-      - "identifiability/**"
-      - "Stability_Analysis/**"
+      - "tests/swat/**"
+      - "identifiability/swat/**"
+      - "stability/swat/**"
       - "pyproject.toml"
-      - ".github/workflows/option_d_validation.yml"
+      - ".github/workflows/swat_validation.yml"
   pull_request:
     branches: [main]
     paths:
       - "src/model_validation/**"
-      - "tests/**"
-      - "identifiability/**"
-      - "Stability_Analysis/**"
+      - "tests/swat/**"
+      - "identifiability/swat/**"
+      - "stability/swat/**"
       - "pyproject.toml"
-      - ".github/workflows/option_d_validation.yml"
+      - ".github/workflows/swat_validation.yml"
   workflow_dispatch:           # allow manual trigger
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
   # Runs the 17-test SWAT gating suite. ~5 min on CPU. Always required.
   # ====================================================================
   gating-tests:
-    name: SWAT gating tests (Option D)
+    name: SWAT gating tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -63,7 +63,7 @@ jobs:
   # ====================================================================
   # Runs the FIM analysis (~10-15 min on CPU) and the 8-corner stability
   # sweep (~5-10 min on CPU). Both are the same analyses that produce the
-  # documented results in identifiability/ and Stability_Analysis/.
+  # documented results in identifiability/swat/ and stability/swat/.
   # Both must report PASS or the build fails.
   # ====================================================================
   identifiability-and-stability:
@@ -90,7 +90,7 @@ jobs:
       - name: Fisher-information identifiability
         # Exits non-zero if rank < N or condition number > 1e10.
         run: |
-          python -u identifiability/compute_fim.py
+          python -u identifiability/swat/compute_fim.py
         env:
           JAX_PLATFORMS: cpu
 
@@ -99,13 +99,13 @@ jobs:
         if: always()
         with:
           name: fim-results
-          path: identifiability/results/
+          path: identifiability/swat/results/
           retention-days: 30
 
       - name: Lyapunov stability — 8-corner sweep
         # Exits non-zero if any corner fails its acceptance threshold.
         run: |
-          python -u Stability_Analysis/corner_case_sweep.py
+          python -u stability/swat/corner_case_sweep.py
         env:
           JAX_PLATFORMS: cpu
 
@@ -114,14 +114,14 @@ jobs:
         if: always()
         with:
           name: lyapunov-results
-          path: Stability_Analysis/results/
+          path: stability/swat/results/
           retention-days: 30
 
   # ====================================================================
   # JOB 3 — Tag if everything passes (main branch only)
   # ====================================================================
   # If both jobs pass on main, tag the commit so OT-Control's vendor-sync
-  # script can identify it as a known-good Option D snapshot.
+  # script can identify it as a known-good SWAT snapshot.
   # ====================================================================
   tag-validated:
     name: Tag commit as validated
@@ -139,7 +139,7 @@ jobs:
         run: |
           DATE=$(date -u +%Y%m%d)
           SHA_SHORT=$(git rev-parse --short HEAD)
-          TAG="option-d-validated-${DATE}-${SHA_SHORT}"
+          TAG="swat-validated-${DATE}-${SHA_SHORT}"
           git tag "$TAG"
           git push origin "$TAG"
           echo "Tagged: $TAG"
