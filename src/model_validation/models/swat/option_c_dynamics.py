@@ -118,16 +118,24 @@ def swat_drift_option_c(t: jnp.ndarray, x: jnp.ndarray, u: jnp.ndarray,
 def option_c_parameters(
     lambda_base: Optional[float] = None,
     lambda_Z_base: Optional[float] = None,
+    c_tilde: Optional[float] = None,
 ) -> Dict[str, float]:
     """Build a parameter dict for Option C.
 
-    Defaults: spec's lambda=32, and lambda_Z=8 (same scale as gamma_3,
-    chosen to mirror Z's existing forcing scale).
+    Calibrated defaults (per validation library's sleep-fraction tuning):
+      lambda    = 4.0   (down from spec's 32; required for V_h sensitivity
+                          under the new amp_W = sigmoid(B+A) - sigmoid(B-A) form)
+      lambda_Z  = 1.0   (Z forcing baseline; symmetric with lambda)
+      c_tilde   = 3.0   (matches upstream PARAM_SET_A; gives ~35% sleep
+                          fraction at lambda=4. The vendored bump to 2.5
+                          was for the spec's lambda=32 regime.)
+
+    Each parameter is overridable; pass None to keep the calibrated default.
     """
     p = default_swat_parameters()
-    if lambda_base is not None:
-        p['lmbda'] = float(lambda_base)
-    p['lambda_Z'] = 8.0 if lambda_Z_base is None else float(lambda_Z_base)
+    p['lmbda'] = 4.0 if lambda_base is None else float(lambda_base)
+    p['lambda_Z'] = 1.0 if lambda_Z_base is None else float(lambda_Z_base)
+    p['c_tilde'] = 3.0 if c_tilde is None else float(c_tilde)
     return p
 
 
