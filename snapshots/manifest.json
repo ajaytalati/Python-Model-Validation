@@ -1,0 +1,10 @@
+{
+  "snapshots": [
+    {
+      "upstream_sha": "hand-copied-from-OT-Control-v1.1.0",
+      "captured_at": "2026-04-27T00:00:00+00:00",
+      "status": "pre-fix",
+      "notes": "Initial snapshot, hand-copied from Python-Model-OT-Control v1.1.0 _vendored_models/swat/. This snapshot is the regression target for issue #4 — V_h is anti-anabolic, expected to fail tests 1, 2, 3, 4, 5."
+    }
+  ]
+}
