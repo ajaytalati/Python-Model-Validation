@@ -3,7 +3,7 @@
 **Date:** 2026-04-27
 **Model version:** Option C v4 / Option D
 **Issue:** [#6](https://github.com/ajaytalati/Python-Model-OT-Control/issues/6)
-**Companion analysis:** [`identifiability/fisher_information_analysis.md`](../identifiability/fisher_information_analysis.md)
+**Companion analysis:** [`identifiability/swat/fisher_information_analysis.md`](../../identifiability/swat/fisher_information_analysis.md)
 
 ## TL;DR
 
@@ -145,13 +145,13 @@ Each ran deterministically for D=60 days at corner 4.
 
 This is a stronger result than the spec's claim that T → T* from the initial state `(0.5, 3.5, 0.5, 0.5)`. The basin of attraction at the healthy corner is the **entire 4-dimensional physical state space**, not a small neighbourhood.
 
-![IC sweep](https://raw.githubusercontent.com/ajaytalati/Python-Model-Validation/main/Stability_Analysis/results/init_cond_sweep.png)
+![IC sweep](https://raw.githubusercontent.com/ajaytalati/Python-Model-Validation/main/stability/swat/results/init_cond_sweep.png)
 
 ## 6. Phase plane — (E_dyn, T)
 
 Projection of all 8 corner trajectories to the (E_dyn, T) plane. Circles mark initial states; squares mark final states.
 
-![phase plane](https://raw.githubusercontent.com/ajaytalati/Python-Model-Validation/main/Stability_Analysis/results/phase_plane.png)
+![phase plane](https://raw.githubusercontent.com/ajaytalati/Python-Model-Validation/main/stability/swat/results/phase_plane.png)
 
 Key reading: the red dotted vertical line at `E_crit = 0.5` separates the sub-critical regime (left: T → 0) from the super-critical regime (right: T → T* = 1). Only corner 4 ends in the super-critical region — all 7 other corners sit at `E ≈ 0` and collapse vertically to T = 0.
 
@@ -277,7 +277,7 @@ This is a standard slow-manifold argument and could be made fully rigorous via c
 
 ```bash
 cd Python-Model-Validation
-python -u Stability_Analysis/corner_case_sweep.py
+python -u stability/swat/corner_case_sweep.py
 ```
 
 Reproduces all numerical results plus the four plots in ~50 seconds on a single GPU.
