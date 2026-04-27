@@ -26,10 +26,11 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 SCENARIOS = [
     # name, V_h, V_n, V_c, T_0, description
-    ("A_healthy",   1.0, 0.3, 0.0, 0.50, "Healthy: canonical Set A"),
+    # Healthy default uses V_n=0 — clean V_h-only signal per user's spec.
+    ("A_healthy",   1.0, 0.0, 0.0, 0.50, "Healthy: V_h=1, V_n=0 (clean signal)"),
     ("B_insomnia",  0.2, 3.5, 0.0, 0.50, "Insomnia: low V_h, severe V_n"),
-    ("C_recovery",  1.0, 0.3, 0.0, 0.05, "Recovery: healthy controls, sick T_0"),
-    ("D_shift_work", 1.0, 0.3, 6.0, 0.50, "Shift-work: 6h phase shift"),
+    ("C_recovery",  1.0, 0.0, 0.0, 0.05, "Recovery: healthy controls, sick T_0"),
+    ("D_shift_work", 1.0, 0.0, 6.0, 0.50, "Shift-work: 6h phase shift, V_n=0"),
 ]
 D = 14.0
 N_REAL = 8

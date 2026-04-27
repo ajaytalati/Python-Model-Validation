@@ -9,9 +9,10 @@ from model_validation.runner import t_end_under_constant_controls
 
 
 def test_v_c_zero_is_max(model):
-    T_aligned    = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=0.0)
-    T_shift_pos  = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=6.0)
-    T_shift_neg  = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=-6.0)
+    # V_n=0 (clean V_h-only signal for healthy)
+    T_aligned    = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=0.0)
+    T_shift_pos  = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=6.0)
+    T_shift_neg  = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=-6.0)
     print(f"\n  V_c= 0:  T_end = {T_aligned:.3f}")
     print(f"  V_c=+6:  T_end = {T_shift_pos:.3f}")
     print(f"  V_c=-6:  T_end = {T_shift_neg:.3f}")
@@ -27,8 +28,8 @@ def test_v_c_zero_is_max(model):
 
 def test_v_c_symmetric(model):
     """T_end should be symmetric in V_c (cos is even)."""
-    T_pos = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=6.0)
-    T_neg = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=-6.0)
+    T_pos = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=6.0)
+    T_neg = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=-6.0)
     assert abs(T_pos - T_neg) < 0.05, (
         f"V_c collapse not symmetric: V_c=+6 -> {T_pos:.3f}, "
         f"V_c=-6 -> {T_neg:.3f}"

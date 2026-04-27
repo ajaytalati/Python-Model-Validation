@@ -8,9 +8,10 @@ from model_validation.runner import sleep_fraction_under_controls
 
 
 def test_healthy_sleep_fraction(model_with_noise):
-    """Note: uses the WITH-noise model (sleep fraction is a stochastic stat)."""
+    """Note: uses the WITH-noise model (sleep fraction is a stochastic stat).
+    V_n=0 (clean V_h-only signal for healthy)."""
     sf = sleep_fraction_under_controls(
-        model_with_noise, V_h=1.0, V_n=0.3, V_c=0.0
+        model_with_noise, V_h=1.0, V_n=0.0, V_c=0.0
     )
     print(f"\n  Healthy sleep fraction: {sf*100:.1f}% (target: 25%-40%)")
     assert 0.25 <= sf <= 0.40, (

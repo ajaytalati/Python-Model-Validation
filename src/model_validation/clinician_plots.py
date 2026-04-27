@@ -233,8 +233,9 @@ def _compute_E_dyn(traj: np.ndarray, V_h: float, V_n: float, V_c: float,
     if variant == "option-c":
         lam_amp_W = params["lambda_amp_W"]
         lam_amp_Z = params["lambda_amp_Z"]
-        A_W = lam_amp_W * (1.0 + V_h)
-        A_Z = lam_amp_Z * (1.0 + V_h)
+        # A = λ_amp · V_h (no +1 offset — V_h=0 gives no entrainment)
+        A_W = lam_amp_W * V_h
+        A_Z = lam_amp_Z * V_h
         B_W = V_n - a + alpha_T * T
         B_Z = -V_n + beta_Z * a
         amp_W = _sigmoid_np(B_W + A_W) - _sigmoid_np(B_W - A_W)

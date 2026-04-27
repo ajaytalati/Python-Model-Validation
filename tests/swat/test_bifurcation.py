@@ -23,9 +23,10 @@ def test_subcritical_collapses(model):
 
 
 def test_supercritical_sustains(model):
-    """Healthy controls should give E > E_crit and sustain T > 0.30."""
-    T_supercrit = t_end_under_constant_controls(model, V_h=1.0, V_n=0.3, V_c=0.0)
-    print(f"\n  V_h=1, V_n=0.3: T_end = {T_supercrit:.3f}  (target: > 0.30)")
-    assert T_supercrit > 0.30, (
-        f"Super-critical regime should sustain T > 0.30: got {T_supercrit:.3f}"
+    """Healthy controls should give E > E_crit and sustain T high.
+    V_n=0 (clean V_h-only signal for healthy)."""
+    T_supercrit = t_end_under_constant_controls(model, V_h=1.0, V_n=0.0, V_c=0.0)
+    print(f"\n  V_h=1, V_n=0: T_end = {T_supercrit:.3f}  (target: > 0.50)")
+    assert T_supercrit > 0.50, (
+        f"Super-critical regime should sustain T > 0.50: got {T_supercrit:.3f}"
     )

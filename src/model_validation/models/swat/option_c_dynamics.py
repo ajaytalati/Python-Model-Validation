@@ -62,8 +62,13 @@ def entrainment_quality_option_c(
     lam_amp_W = params['lambda_amp_W']
     lam_amp_Z = params['lambda_amp_Z']
 
-    A_W = lam_amp_W * (1.0 + V_h)
-    A_Z = lam_amp_Z * (1.0 + V_h)
+    # V_h enters as a multiplicative factor on the forcing amplitudes,
+    # WITHOUT a +1 offset. So V_h=0 (depleted vitality) gives A=0 → amp=0
+    # → E=0 → μ=μ_0<0 → T collapses. V_h>0 ramps entrainment up; with
+    # λ_amp values calibrated to dominate B_W and B_Z over the daily
+    # a-cycle, amp saturates at ~1 by V_h=1.
+    A_W = lam_amp_W * V_h
+    A_Z = lam_amp_Z * V_h
     B_W = V_n - a + alpha_T * T
     B_Z = -V_n + beta_Z * a
 
@@ -127,19 +132,22 @@ def option_c_parameters(
 
     Calibrated defaults:
       lmbda           = 32.0  (UNCHANGED from spec — preserves W↔Z flip-flop)
-      lambda_amp_W    = 4.0   (NEW — entrainment-formula forcing scale on W;
-                                gives V_h sensitivity in [0, 4])
-      lambda_amp_Z    = 1.0   (NEW — entrainment-formula forcing scale on Z;
-                                ratio matches spec's γ_3:λ ≈ 1:4)
-      c_tilde         = 2.5   (UNCHANGED from OT-Control vendored — works at
-                                spec λ=32)
+      lambda_amp_W    = 5.0   (NEW — entrainment-formula forcing scale on W.
+                                With A_W = λ_amp_W · V_h, gives amp_W ≈ 1
+                                across daily B_W cycle at healthy V_h=1.)
+      lambda_amp_Z    = 8.0   (NEW — Z-side scale. Larger because β_Z·a can
+                                reach ~4, so A_Z must dominate. Gives
+                                amp_Z ≈ 1 across daily a-cycle at V_h=1.)
+      c_tilde         = 3.0   (Matches upstream PARAM_SET_A. At V_n=0 healthy
+                                default, gives sleep fraction ~35%, in
+                                target window. The OT-Control vendored bump
+                                to 2.5 was for the V_n=0.3 healthy regime.)
     """
     p = default_swat_parameters()
     # Spec lambda is kept (default_swat_parameters has lmbda=32 already).
-    p['lambda_amp_W'] = 4.0 if lambda_amp_W is None else float(lambda_amp_W)
-    p['lambda_amp_Z'] = 1.0 if lambda_amp_Z is None else float(lambda_amp_Z)
-    if c_tilde is not None:
-        p['c_tilde'] = float(c_tilde)
+    p['lambda_amp_W'] = 5.0 if lambda_amp_W is None else float(lambda_amp_W)
+    p['lambda_amp_Z'] = 8.0 if lambda_amp_Z is None else float(lambda_amp_Z)
+    p['c_tilde'] = 3.0 if c_tilde is None else float(c_tilde)
     return p
 
 
