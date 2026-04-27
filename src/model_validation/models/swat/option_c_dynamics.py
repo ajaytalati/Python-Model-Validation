@@ -1,28 +1,27 @@
-"""Option C — V_h modulates entrainment quality, NOT the drift.
+"""Option C v4 / "Option D" — refined entrainment formulation.
 
-This is a structural revision of the original Option C draft (which had
-V_h scale λ inside the drift directly). The original draft killed the
-W↔Z flip-flop because dropping λ from 32 → 4 in the drift weakened
-circadian forcing below the noise floor.
+Two structural fixes layered on top of the spec:
 
-The fix: split λ into two roles.
+(1) V_h modulates the analytical entrainment quality, NOT the physical
+    drift. λ in the drift stays at the spec value (32) so the W↔Z
+    daily flip-flop is preserved. V_h enters via NEW parameters
+    λ_amp_W and λ_amp_Z which scale the amplitude-formula forcing
+    terms inside `entrainment_quality_option_c`. With A = λ_amp · V_h
+    (no +1 offset), V_h=0 gives A=0 → amp=0 → no entrainment
+    (clinically right: depleted vitality = no rhythm).
 
-  - λ (in the drift): stays at the spec value (32). Preserves the
-    physical circadian forcing strength on W → clean flip-flop, sleep
-    architecture intact, sleep fraction at ~33% with c_tilde=2.5.
+(2) V_n acts as a multiplicative DAMPENER on E_dyn (rather than as a
+    "balance-point tuner" via the bell-shaped amp formulas). One new
+    parameter V_n_scale. damp(V_n) = exp(−V_n / V_n_scale) is
+    monotonically decreasing in V_n, so any chronic load > 0
+    monotonically attenuates the rhythm — clinically correct.
 
-  - λ_amp_W, λ_amp_Z (NEW, in entrainment_quality only): replace the
-    forcing-amplitude term in the amp_W / amp_Z formulas. These are
-    *analytical* knobs that govern how strongly V_h modulates E_dyn —
-    they have no effect on the actual W or Z trajectories.
+Drift is otherwise unchanged from the spec. Three new parameters
+total: λ_amp_W, λ_amp_Z, V_n_scale.
 
-V_h is also removed from u_W's drift (matching the original draft).
-This decouples vitality from sleep-wake architecture, giving V_h a
-single, monotone, interpretable effect: stronger V_h → larger amp_W
-and amp_Z analytical terms → larger E_dyn → larger μ(E) → larger T*.
-
-Drift is otherwise unchanged from the spec. Two new parameters total:
-λ_amp_W and λ_amp_Z.
+Issue refs:
+  - #4 — V_h structural inversion (fixed by (1))
+  - #5 — V_n non-monotonic catabolicity (fixed by (2))
 """
 from __future__ import annotations
 from typing import Dict, Optional
@@ -48,25 +47,26 @@ def entrainment_quality_option_c(
     V_h: jnp.ndarray, V_n: jnp.ndarray, V_c: jnp.ndarray,
     params: Dict[str, float]
 ) -> jnp.ndarray:
-    """E_dyn under refined Option C.
+    """E_dyn under Option C v4 / Option D.
 
-    amp_W = sigmoid(B_W + A_W) - sigmoid(B_W - A_W)  with
-        A_W = λ_amp_W · (1 + V_h)
-        B_W = V_n - a + α_T · T
+    E_dyn = damp(V_n) · amp_W · amp_Z · phase(V_c)
 
-    Same form for amp_Z. λ_amp_W and λ_amp_Z are entrainment-formula
-    parameters and NOT used in the drift.
+    where
+        amp_W = σ(B_W + A_W) − σ(B_W − A_W)
+        amp_Z = σ(B_Z + A_Z) − σ(B_Z − A_Z)
+        A_W   = λ_amp_W · V_h        (V_h is anabolic via forcing scale)
+        A_Z   = λ_amp_Z · V_h
+        B_W   = V_n − a + α_T · T
+        B_Z   = −V_n + β_Z · a
+        damp  = exp(−V_n / V_n_scale)         # NEW (issue #5)
+        phase = max(cos(2π V_c / 24), 0)
     """
     alpha_T = params['alpha_T']
     beta_Z = params['beta_Z']
     lam_amp_W = params['lambda_amp_W']
     lam_amp_Z = params['lambda_amp_Z']
+    V_n_scale = params['V_n_scale']
 
-    # V_h enters as a multiplicative factor on the forcing amplitudes,
-    # WITHOUT a +1 offset. So V_h=0 (depleted vitality) gives A=0 → amp=0
-    # → E=0 → μ=μ_0<0 → T collapses. V_h>0 ramps entrainment up; with
-    # λ_amp values calibrated to dominate B_W and B_Z over the daily
-    # a-cycle, amp saturates at ~1 by V_h=1.
     A_W = lam_amp_W * V_h
     A_Z = lam_amp_Z * V_h
     B_W = V_n - a + alpha_T * T
@@ -74,8 +74,14 @@ def entrainment_quality_option_c(
 
     amp_W = _sigmoid(B_W + A_W) - _sigmoid(B_W - A_W)
     amp_Z = _sigmoid(B_Z + A_Z) - _sigmoid(B_Z - A_Z)
+
+    # Multiplicative V_n dampener — addresses issue #5. Any V_n > 0
+    # monotonically attenuates E. damp(0)=1, damp(V_n_scale·ln 2)=0.5,
+    # damp(∞)=0.
+    damp = jnp.exp(-V_n / V_n_scale)
+
     phase = jnp.maximum(jnp.cos(2.0 * jnp.pi * V_c / 24.0), 0.0)
-    return amp_W * amp_Z * phase
+    return damp * amp_W * amp_Z * phase
 
 
 def swat_drift_option_c(t: jnp.ndarray, x: jnp.ndarray, u: jnp.ndarray,
@@ -126,9 +132,10 @@ def swat_drift_option_c(t: jnp.ndarray, x: jnp.ndarray, u: jnp.ndarray,
 def option_c_parameters(
     lambda_amp_W: Optional[float] = None,
     lambda_amp_Z: Optional[float] = None,
+    V_n_scale: Optional[float] = None,
     c_tilde: Optional[float] = None,
 ) -> Dict[str, float]:
-    """Build a parameter dict for refined Option C.
+    """Build a parameter dict for Option C v4 / Option D.
 
     Calibrated defaults:
       lmbda           = 32.0  (UNCHANGED from spec — preserves W↔Z flip-flop)
@@ -138,6 +145,14 @@ def option_c_parameters(
       lambda_amp_Z    = 8.0   (NEW — Z-side scale. Larger because β_Z·a can
                                 reach ~4, so A_Z must dominate. Gives
                                 amp_Z ≈ 1 across daily a-cycle at V_h=1.)
+      V_n_scale       = 2.0   (NEW — V_n dampener time-scale (issue #5).
+                                damp = exp(−V_n / V_n_scale).
+                                damp(0) = 1.00
+                                damp(0.3) = 0.86
+                                damp(1.0) = 0.61
+                                damp(2.0) = 0.37
+                                damp(3.5) = 0.17  (sub-critical)
+                                damp(5.0) = 0.08)
       c_tilde         = 3.0   (Matches upstream PARAM_SET_A. At V_n=0 healthy
                                 default, gives sleep fraction ~35%, in
                                 target window. The OT-Control vendored bump
@@ -147,23 +162,22 @@ def option_c_parameters(
     # Spec lambda is kept (default_swat_parameters has lmbda=32 already).
     p['lambda_amp_W'] = 5.0 if lambda_amp_W is None else float(lambda_amp_W)
     p['lambda_amp_Z'] = 8.0 if lambda_amp_Z is None else float(lambda_amp_Z)
-    p['c_tilde'] = 3.0 if c_tilde is None else float(c_tilde)
+    p['V_n_scale']    = 2.0 if V_n_scale is None else float(V_n_scale)
+    p['c_tilde']      = 3.0 if c_tilde is None else float(c_tilde)
     return p
 
 
 def option_c_model(
     lambda_amp_W: Optional[float] = None,
     lambda_amp_Z: Optional[float] = None,
+    V_n_scale: Optional[float] = None,
     c_tilde: Optional[float] = None,
     *,
-    # Backward-compat: older code may pass lambda_base / lambda_Z_base.
-    # Map them to the new lambda_amp_* slot, IGNORING the request to
-    # change the drift-side λ (since the structural fix requires keeping
-    # spec λ in the drift).
+    # Backward-compat aliases for older callers (test fixtures, scripts).
     lambda_base: Optional[float] = None,
     lambda_Z_base: Optional[float] = None,
 ):
-    """Return a ModelInterface configured for refined Option C."""
+    """Return a ModelInterface configured for Option C v4 / Option D."""
     from model_validation.runner import ModelInterface
 
     if lambda_amp_W is None and lambda_base is not None:
@@ -172,7 +186,7 @@ def option_c_model(
         lambda_amp_Z = lambda_Z_base
 
     _INIT_STATE_A = np.array([0.5, 3.5, 0.5, 0.5])
-    p = option_c_parameters(lambda_amp_W, lambda_amp_Z, c_tilde)
+    p = option_c_parameters(lambda_amp_W, lambda_amp_Z, V_n_scale, c_tilde)
     return ModelInterface(
         drift=swat_drift_option_c,
         diffusion=vendored_dynamics.swat_diffusion,
@@ -180,6 +194,7 @@ def option_c_model(
         init_state=_INIT_STATE_A.copy(),
         amplitude_index=3,
         state_clip=vendored_dynamics.swat_state_clip,
-        name=f"option_c_swat(λ_amp_W={p['lambda_amp_W']}, "
-             f"λ_amp_Z={p['lambda_amp_Z']}, c_tilde={p['c_tilde']})",
+        name=f"option_c_v4_swat(λ_amp_W={p['lambda_amp_W']}, "
+             f"λ_amp_Z={p['lambda_amp_Z']}, V_n_scale={p['V_n_scale']}, "
+             f"c_tilde={p['c_tilde']})",
     )
