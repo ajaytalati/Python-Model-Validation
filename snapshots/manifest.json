@@ -1,16 +1,21 @@
 {
-  "snapshots": [
-    {
-      "upstream_sha": "hand-copied-from-OT-Control-v1.1.0",
-      "captured_at": "2026-04-27T00:00:00+00:00",
-      "status": "pre-fix",
-      "notes": "Initial snapshot, hand-copied from Python-Model-OT-Control v1.1.0 _vendored_models/swat/. Regression target for issue #4 — V_h was anti-anabolic. Superseded by the V_h-anabolic structural fix below."
-    },
-    {
-      "upstream_sha": "Python-Model-Development-Simulation@fix/swat-v-h-inversion (PR #11)",
-      "captured_at": "2026-04-28T00:00:00+00:00",
-      "status": "validated",
-      "notes": "V_h-anabolic structural fix. V_h removed from u_W and routed through the entrainment-amplitude factor. Three new parameters (lambda_amp_W=5, lambda_amp_Z=8, V_n_scale=2). V_c_max=3-hour clinical threshold for phase pathology. The earlier 'Option C / Option D' label is now redundant — there is one SWAT, this one. Pending CI re-tag."
+  "schema_version": 2,
+  "models": {
+    "swat": {
+      "snapshots": [
+        {
+          "upstream_sha": "hand-copied-from-OT-Control-v1.1.0",
+          "captured_at": "2026-04-27T00:00:00+00:00",
+          "status": "pre-fix",
+          "notes": "Initial snapshot, hand-copied from Python-Model-OT-Control v1.1.0 _vendored_models/swat/. Regression target for issue #4 — V_h was anti-anabolic. Superseded by the V_h-anabolic structural fix below."
+        },
+        {
+          "upstream_sha": "Python-Model-Development-Simulation@fix/swat-v-h-inversion (PR #11)",
+          "captured_at": "2026-04-28T00:00:00+00:00",
+          "status": "validated",
+          "notes": "V_h-anabolic structural fix. V_h removed from u_W and routed through the entrainment-amplitude factor. Three new parameters (lambda_amp_W=5, lambda_amp_Z=8, V_n_scale=2). V_c_max=3-hour clinical threshold for phase pathology. The earlier 'Option C / Option D' label is now redundant — there is one SWAT, this one. Auto-tagged option-d-validated-20260428-6ad6acb by the validation CI."
+        }
+      ]
     }
-  ]
+  }
 }
