@@ -34,5 +34,5 @@ where = ["src"]
 testpaths = ["tests"]
 addopts = "-v --tb=short"
 markers = [
-    "expected_to_fail_pre_fix: Test currently fails on pre-fix SWAT snapshot (issue #4 regression target).",
+    "expected_to_fail_pre_fix: Test fails on a pre-fix model snapshot (regression target). Used by SWAT for issue #4; reusable by other models when they vendor a known-broken upstream commit as a regression baseline.",
 ]
