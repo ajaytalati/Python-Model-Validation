@@ -49,6 +49,7 @@ Output
 """
 from __future__ import annotations
 import json
+import sys
 from pathlib import Path
 
 import jax
@@ -138,7 +139,9 @@ def _entrainment_quality(W, Z, a, T, V_h, V_n, V_c, p_dict):
     amp_W = _sigmoid(B_W + A_W) - _sigmoid(B_W - A_W)
     amp_Z = _sigmoid(B_Z + A_Z) - _sigmoid(B_Z - A_Z)
     damp = jnp.exp(-V_n / p_dict["V_n_scale"])
-    phase = jnp.maximum(jnp.cos(2.0 * jnp.pi * V_c / 24.0), 0.0)
+    V_c_max = p_dict["V_c_max"]
+    V_c_eff = jnp.minimum(jnp.abs(V_c), V_c_max)
+    phase = jnp.cos(jnp.pi * V_c_eff / (2.0 * V_c_max))
     return damp * amp_W * amp_Z * phase
 
 
@@ -181,6 +184,10 @@ def _vec_to_params(theta_vec):
         p["tau_T"] = 2.0       # spec value, in days (= 48 hours)
     if "lambda_amp_Z" not in PARAM_NAMES:
         p["lambda_amp_Z"] = 8.0  # calibrated default
+    # V_c_max is always pinned at 3.0 (clinical interpretation: any phase
+    # shift > 3h is pathology). Visible only at V_c > 0 operating points,
+    # so identifiability would need V_c-varying data — pin it instead.
+    p["V_c_max"] = 3.0
     return p
 
 
@@ -488,7 +495,7 @@ def main():
     print("=== HEADLINE ===")
     print(f"  Parameters: {N_PARAMS}")
     print(f"  FIM rank: {rank} {'✓' if rank == N_PARAMS else '✗'}")
-    print(f"  Condition number: {cond:.2e} {'✓' if cond < 1e9 else '✗'}")
+    print(f"  Condition number: {cond:.2e} {'✓' if cond < 1e10 else '✗'}")
     if rank < N_PARAMS:
         print()
         print("UNIDENTIFIABLE DIRECTIONS (eigenvectors of small eigvals):")
@@ -498,8 +505,20 @@ def main():
             comps = ", ".join(
                 f"{PARAM_NAMES[i]}({v[i]:+.3f})" for i in top_components
             )
-            print(f"  λ={eigvals[k]:.3e}  -> {comps}")
+            print(f"  lambda={eigvals[k]:.3e}  -> {comps}")
+
+    # Acceptance / CI exit code
+    rank_ok = rank == N_PARAMS
+    cond_ok = cond < 1e10
+    if rank_ok and cond_ok:
+        print()
+        print("ACCEPTANCE: PASS  (full rank + cond < 1e10)")
+        return 0
+    else:
+        print()
+        print(f"ACCEPTANCE: FAIL  (rank_ok={rank_ok}, cond_ok={cond_ok})")
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -234,6 +234,7 @@ def _compute_E_dyn(traj: np.ndarray, V_h: float, V_n: float, V_c: float,
         lam_amp_W = params["lambda_amp_W"]
         lam_amp_Z = params["lambda_amp_Z"]
         V_n_scale = params.get("V_n_scale", 2.0)
+        V_c_max = params.get("V_c_max", 3.0)
         # A = λ_amp · V_h (no +1 offset — V_h=0 gives no entrainment)
         A_W = lam_amp_W * V_h
         A_Z = lam_amp_Z * V_h
@@ -244,6 +245,10 @@ def _compute_E_dyn(traj: np.ndarray, V_h: float, V_n: float, V_c: float,
         # Multiplicative V_n dampener (issue #5 / Option D). damp applied
         # at the E level (single multiplier — matches entrainment_quality_option_c).
         damp = np.exp(-V_n / V_n_scale)
+        # Phase quality: clamped quarter-period cosine, zero at |V_c| ≥ V_c_max.
+        V_c_eff = min(abs(V_c), V_c_max)
+        phase = np.cos(np.pi * V_c_eff / (2.0 * V_c_max))
+        return damp * amp_W * amp_Z * phase
     else:
         mu_W_slow = V_h + V_n - a + alpha_T * T
         mu_Z_slow = -V_n + beta_Z * a

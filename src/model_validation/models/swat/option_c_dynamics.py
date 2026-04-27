@@ -80,7 +80,14 @@ def entrainment_quality_option_c(
     # damp(∞)=0.
     damp = jnp.exp(-V_n / V_n_scale)
 
-    phase = jnp.maximum(jnp.cos(2.0 * jnp.pi * V_c / 24.0), 0.0)
+    # Phase quality: tightened from spec's max(cos(2π V_c / 24), 0) to a
+    # clamped quarter-period cosine. Now phase(±V_c_max) = 0 exactly (was
+    # ±6 in spec). With V_c_max=3, any |V_c| ≥ 3 is pathological — matches
+    # clinical desideratum that even moderate phase shifts (3+ hour shift
+    # workers, transmeridian travellers) are pathological.
+    V_c_max = params['V_c_max']
+    V_c_eff = jnp.minimum(jnp.abs(V_c), V_c_max)
+    phase = jnp.cos(jnp.pi * V_c_eff / (2.0 * V_c_max))
     return damp * amp_W * amp_Z * phase
 
 
@@ -133,6 +140,7 @@ def option_c_parameters(
     lambda_amp_W: Optional[float] = None,
     lambda_amp_Z: Optional[float] = None,
     V_n_scale: Optional[float] = None,
+    V_c_max: Optional[float] = None,
     c_tilde: Optional[float] = None,
 ) -> Dict[str, float]:
     """Build a parameter dict for Option C v4 / Option D.
@@ -145,6 +153,12 @@ def option_c_parameters(
       lambda_amp_Z    = 8.0   (NEW — Z-side scale. Larger because β_Z·a can
                                 reach ~4, so A_Z must dominate. Gives
                                 amp_Z ≈ 1 across daily a-cycle at V_h=1.)
+      V_c_max         = 3.0   (NEW — phase-quality threshold (this commit).
+                                Any |V_c| ≥ V_c_max gives phase=0 (full
+                                pathology). Was implicitly 6.0 in spec
+                                via cos(2π V_c / 24); tightened to 3.0
+                                to make even moderate phase shifts
+                                clinically pathological.)
       V_n_scale       = 2.0   (NEW — V_n dampener time-scale (issue #5).
                                 damp = exp(−V_n / V_n_scale).
                                 damp(0) = 1.00
@@ -163,6 +177,7 @@ def option_c_parameters(
     p['lambda_amp_W'] = 5.0 if lambda_amp_W is None else float(lambda_amp_W)
     p['lambda_amp_Z'] = 8.0 if lambda_amp_Z is None else float(lambda_amp_Z)
     p['V_n_scale']    = 2.0 if V_n_scale is None else float(V_n_scale)
+    p['V_c_max']      = 3.0 if V_c_max is None else float(V_c_max)
     p['c_tilde']      = 3.0 if c_tilde is None else float(c_tilde)
     return p
 
@@ -171,6 +186,7 @@ def option_c_model(
     lambda_amp_W: Optional[float] = None,
     lambda_amp_Z: Optional[float] = None,
     V_n_scale: Optional[float] = None,
+    V_c_max: Optional[float] = None,
     c_tilde: Optional[float] = None,
     *,
     # Backward-compat aliases for older callers (test fixtures, scripts).
@@ -186,7 +202,8 @@ def option_c_model(
         lambda_amp_Z = lambda_Z_base
 
     _INIT_STATE_A = np.array([0.5, 3.5, 0.5, 0.5])
-    p = option_c_parameters(lambda_amp_W, lambda_amp_Z, V_n_scale, c_tilde)
+    p = option_c_parameters(lambda_amp_W, lambda_amp_Z, V_n_scale,
+                              V_c_max, c_tilde)
     return ModelInterface(
         drift=swat_drift_option_c,
         diffusion=vendored_dynamics.swat_diffusion,

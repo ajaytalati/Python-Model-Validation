@@ -30,7 +30,7 @@ Outputs
 """
 from __future__ import annotations
 import json
-import sys
+import sys                                          # noqa: F401  (used in main)
 import time
 from functools import partial
 from pathlib import Path
@@ -429,7 +429,8 @@ def main():
     print(flush=True)
     overall = healthy_ok_det and healthy_ok_stoch and pathological_ok and ic_ok
     print(f"  OVERALL: {'PASS' if overall else 'FAIL'}", flush=True)
+    return 0 if overall else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
