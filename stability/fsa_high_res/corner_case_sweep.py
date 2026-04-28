@@ -275,8 +275,10 @@ def main():
             "B_0": B0, "F_0": F0, "A_0": A0, "A_end": A_end,
         })
     A_ends = np.array([r["A_end"] for r in ic_results])
-    print(f"  IC sweep: A(D) range = [{A_ends.min():.3f}, {A_ends.max():.3f}]  "
-          f"mean = {A_ends.mean():.3f} ± {A_ends.std():.3f}", flush=True)
+    spread = float(A_ends.max() - A_ends.min())
+    print(f"  IC sweep: A(D) interval = [{A_ends.min():.3f}, {A_ends.max():.3f}]  "
+          f"spread (max-min) = {spread:.3f}  "
+          f"mean = {A_ends.mean():.3f} ± {A_ends.std():.4f}", flush=True)
     summary["ic_sweep"] = {
         "T_B": T_B_HEALTHY, "Phi": PHI_HEALTHY,
         "n_ics": len(ic_results),
@@ -413,11 +415,12 @@ def main():
           f"{'PASS' if c3_ok else 'FAIL'} (need < 0.1)", flush=True)
     fail_count += not c1_ok
     fail_count += not c3_ok
-    # IC sweep at C4: range < 0.3
-    ic_range = float(A_ends.max() - A_ends.min())
-    ic_ok = ic_range < 0.3
-    print(f"  IC sweep at C4: range = {ic_range:.3f}  "
-          f"{'PASS' if ic_ok else 'FAIL'} (need < 0.3)", flush=True)
+    # IC sweep at C4: spread of A(D) values (max - min) < 0.3
+    ic_spread = float(A_ends.max() - A_ends.min())
+    ic_ok = ic_spread < 0.3
+    print(f"  IC sweep at C4: A(D) spread (max-min over 32 ICs) = {ic_spread:.3f}  "
+          f"{'PASS' if ic_ok else 'FAIL'} (need < 0.3, i.e. all ICs converge "
+          f"to the same neighbourhood)", flush=True)
     fail_count += not ic_ok
     # C0 reported but not gated
     c0 = summary["corners"][0]
