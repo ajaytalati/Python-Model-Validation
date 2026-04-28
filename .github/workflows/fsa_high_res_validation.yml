@@ -1,9 +1,11 @@
 name: FSA-high-res validation
 
-# Re-runs the FSA-high-res clinical-validity gating tests, the Fisher-
+# Re-runs the FSA-high-res structural gating tests, the Fisher-
 # information identifiability analysis, and the Lyapunov stability
 # sweep whenever FSA model code changes. Catches structural regressions
-# before they reach OT-Control.
+# before they reach OT-Control. (Structural / mathematical gating only;
+# does not establish empirical clinical validity — see
+# how_to_add_a_new_validation_model/02_validation_contract.md.)
 
 on:
   push:
@@ -29,12 +31,12 @@ on:
 jobs:
 
   # ====================================================================
-  # JOB 1 — Clinical-validity gating tests
+  # JOB 1 — Structural gating tests
   # ====================================================================
-  # Runs the 16-test FSA gating suite. Each test probes one clinical-
-  # validity property the model is expected to obey (T_B is anabolic
-  # on fitness, Phi is anabolic on strain, overtraining cliff exists,
-  # etc.). ~1 sec on CPU. Always required.
+  # Runs the 16-test FSA gating suite. Each test probes one designed
+  # structural property of the model under its deployed parameters
+  # (T_B drives B up, Phi drives F up, the F^2 overtraining cliff is
+  # present, etc.). ~1 sec on CPU. Always required.
   # ====================================================================
   gating-tests:
     name: FSA gating tests

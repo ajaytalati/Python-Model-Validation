@@ -1,40 +1,37 @@
-"""Are the model's responses smooth in the prescription?
+"""Are the simulator's responses to prescription changes free of discontinuities?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The drift equations are smooth functions of (T_B, Phi). A correct
+ODE solver should therefore produce a smooth response of the
+terminal state to small prescription changes. These tests catch
+solver / numerical issues that would introduce non-physical jumps
+in the response within the healthy operating range.
+
+The model is allowed (by design) to have sharp regime changes at
+the bifurcation boundary (the overtraining cliff). The tests here
+probe smoothness *within* the healthy regime, where the dynamics
+are guaranteed-smooth by construction.
+
+What these tests catch
+----------------------
+- Solver instability in the eps-regularised diffusion at low B
+  or F (a buggy integrator could blow up or mis-step).
+- An equation regression that introduces a non-smooth step
+  function in the drift.
+- Numerical issues that the FIM analysis would also be sensitive
+  to, because both rely on smooth derivatives.
+
+What these tests do NOT establish
 ---------------------------------
-"If I make a small adjustment to my patient's training prescription
-— say, raise the fitness target by 10% — does the model predict a
-correspondingly small change in outcome? Or does it lurch
-discontinuously?"
+- That the response magnitude matches reality.
+- That the design choice of where to place the smooth-vs-cliff
+  boundary corresponds to the real overtraining boundary.
 
-A model whose predicted outcome jumps wildly from a small
-prescription change is unsafe to optimise against: tiny tuning
-adjustments — exactly what the optimal-control engine produces —
-could move the patient between very different predicted regimes.
-Smoothness in (T_B, Phi) is the model's promise that close
-prescriptions give close outcomes.
-
-This is distinct from the bifurcation tests: the model is allowed to
-have a sharp boundary between healthy and overtrained at high Phi.
-What it must NOT have is jumps in B or F that don't correspond to a
-biological mechanism. Both fitness and strain pathways must respond
-continuously in their healthy operating regime.
-
-What the tests below assert
----------------------------
-1. **Fitness responds smoothly to small T_B changes**
-   (test_t_b_dose_response_smooth_in_healthy_regime).
-   In the healthy training regime, halving the gap between two
-   nearby T_B prescriptions must roughly halve the gap in terminal B.
-
-2. **Strain responds smoothly to small Phi changes**
-   (test_phi_dose_response_smooth_in_healthy_regime).
-   Same property for the strain channel: small Phi differences
-   produce proportionally small F differences.
-
-If either fails, the model has a discontinuity in its healthy
-operating range that the OT optimiser would happily exploit, leading
-to an unstable prescription recommendation.
+A note on tolerance: the linearity tolerance is wide (1.5–3.0×
+ratio for a 2× input gap) because the drift is mildly non-linear
+by design (F^2 in mu, A in tau-effective rates). What we're
+catching is order-of-magnitude jumps, not subtle non-linearity.
 """
 from .conftest import terminal_state
 

@@ -1,38 +1,38 @@
-"""Does a healthy prescription land the patient in a healthy steady state?
+"""Does the healthy reference prescription drive (B, F, A) to a fixed point?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The model is designed to have a stable fixed point under constant
+super-critical controls (T_B = 0.5, Phi = 0.05 here): B converges
+to T_B, F to its CIR equilibrium, A to the Stuart-Landau attractor
+sqrt(mu/eta) at the resulting (B, F). These tests confirm three
+structural properties under the deployed parameters:
+
+1. The system settles (state at day 30 ≈ state at day 60).
+2. The settled A value is substantially above zero (A > 0.5).
+3. The basin of the settled fixed point covers the entire physical
+   state space — four diverse starting phenotypes all converge to
+   the same A value within 0.05.
+
+What these tests catch
+----------------------
+- A parameter regression that produces a limit cycle instead of a
+  fixed point (test 1 fails).
+- A parameter regression that crosses mu sub-critical at the
+  healthy reference (test 2 fails — A collapses to zero).
+- A parameter regression that creates multiple attractors
+  inside the physical state space (test 3 fails — different
+  starting points end at different A values).
+
+What these tests do NOT establish
 ---------------------------------
-"If I keep my patient on a healthy moderate training prescription
-indefinitely, does the model predict they settle into a healthy
-steady state — or do they drift, oscillate, or collapse?"
-
-The model's promise to a clinician is that holding a patient on a
-healthy prescription gives a stable healthy outcome — not just a
-brief pulse of pulsatility, not an oscillation, but a settled
-attractor that reflects the patient's adapted-fit state. This is the
-notion of "the patient is in good shape on this regimen" that the
-model has to back up.
-
-What the tests below assert
----------------------------
-1. **Healthy prescription converges to a fixed point**
-   (test_healthy_state_converges_to_fixed_point).
-   Compare the state at day 30 to the state at day 60. Under the
-   healthy reference prescription, both must be essentially the same
-   — the system has settled.
-
-2. **Settled state has positive endocrine pulsatility**
-   (test_healthy_settled_state_has_high_amplitude).
-   The settled A value must be substantially above zero (A > 0.5).
-   If the patient's pulsatility settles at zero under a healthy
-   prescription, the prescription has failed in the clinical sense.
-
-3. **The healthy basin is robust to where the patient starts**
-   (test_healthy_basin_covers_physical_state_space).
-   Start the patient from four different initial states across the
-   physical state space, all under the healthy prescription. All
-   must converge to within 0.05 of each other in A — the same
-   healthy attractor regardless of where the patient was before.
+- That the deployed (T_B = 0.5, Phi = 0.05) point is "healthy" in
+  any clinical sense — that's the model's design assertion.
+- That the settled A value (~0.89 in current parameter set)
+  corresponds to any real biomarker amplitude.
+- That the basin of attraction covers the realistic patient
+  parameter space — only that it covers the deployed (B, F, A)
+  state space at the deployed parameter point.
 """
 import jax.numpy as jnp
 

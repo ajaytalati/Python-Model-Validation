@@ -1,24 +1,44 @@
-"""Test fixtures for the FSA-high-res clinical-validity gating suite.
+"""Test fixtures for the FSA-high-res structural gating suite.
 
-Each test in this directory probes one clinical-validity property of
-the model — a property that a clinician relying on the model's
-predictions would intuit must hold. The pattern across all tests:
+Each test in this directory probes one designed structural property
+of the model — a property the model's *equations + deployed parameters*
+should produce by design. The pattern across all tests:
 
     1. Set the patient phenotype (initial state).
-    2. Pretend a clinician prescribes a constant training schedule
-       (T_B, Phi) for D days.
+    2. Apply a constant training schedule (T_B, Phi) for D days.
     3. Simulate the model deterministically.
-    4. Assert that the simulated outcome matches what the clinical
-       interpretation of the model says it should be.
+    4. Assert that the simulated outcome matches what the model's
+       design intent says it should be.
 
-If a test fails, the clinical interpretation of the model is broken
-in that direction, and any prescription the OT-Control optimiser
-generates by exploiting that direction would be clinically wrong.
+What these tests catch
+----------------------
+- Parameter-sign errors (e.g. someone flips the sign of mu_B and
+  fitness becomes catabolic on amplitude).
+- Equation regressions (e.g. someone drops the F^2 term and the
+  overtraining cliff disappears).
+- Solver bugs (e.g. an integrator that fails on the eps-regularised
+  diffusion silently produces NaN trajectories).
+
+What these tests DO NOT catch
+-----------------------------
+- Whether the model agrees with reality. The tests check the model
+  conforms to its own design intent under its deployed parameter
+  values — they do *not* compare against real patient data, real
+  training logs, published timescales, or expert clinical review.
+  A model that internally passes every test in this suite can still
+  be biophysically wrong in ways the suite cannot detect.
+- Whether the magnitudes (timescales, coupling coefficients,
+  thresholds) match real physiology.
+- Behaviour outside the deployed parameter point.
+
+This is the structural / mathematical layer of validation only.
+True clinical validation is empirical and is out of scope for this
+repo. See `how_to_add_a_new_validation_model/02_validation_contract.md`
+for the canonical scope statement.
 
 Convention: D = 60 days throughout. That's about 4× the slowest
-biological timescale (tau_B = 14 days), long enough for the
-deterministic dynamics to settle into their fixed point under
-constant controls.
+model timescale (tau_B = 14 days), long enough for the deterministic
+dynamics to settle into their fixed point under constant controls.
 
 Note on the harness
 -------------------

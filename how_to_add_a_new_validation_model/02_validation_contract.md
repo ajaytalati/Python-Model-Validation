@@ -7,20 +7,97 @@ acceptance criterion. The CI workflow's auto-tag step
 (`<model>-validated-<date>-<sha>`) only fires when all four pass on
 `main`.
 
-## Deliverable 1 — Gating tests
+## Scope and limitations of this pipeline
+
+Read this section before reading anything else. The validation
+discipline this repo runs is **structural / mathematical**, not
+empirical-clinical. Be precise about what that means before
+labelling a model "validated":
+
+**What this pipeline establishes:**
+
+1. The model's equations + the deployed parameter values jointly
+   produce the qualitative behaviours the model was *designed* to
+   produce (gating tests).
+2. The model's parameters are jointly identifiable from observations
+   of the latent state up to a bounded condition number — there are
+   no rank-deficient directions in the deterministic parameter space
+   under the multi-operating-point design (FIM analysis).
+3. The model has a bounded-orbit attractor structure under constant
+   controls, with the predicted healthy attractor reached
+   numerically and a (model-internal) Lyapunov argument supporting
+   stability of the amplitude variable given the slow-state
+   equilibrium (Lyapunov sweep).
+
+**What this pipeline does NOT establish:**
+
+1. **Agreement with reality.** Nothing in this pipeline compares
+   model predictions to real patient data, real training logs, real
+   biomarker trajectories, retrospective overtraining cases, or
+   anything else outside the model itself. A model that internally
+   passes all three deliverables can still be biophysically wrong
+   in ways the pipeline cannot detect.
+2. **Magnitude calibration.** The pipeline does not check that
+   timescales (`tau_B`, `tau_F`, `tau_T`, `tau_W` …), coupling
+   coefficients, or amplitude scales match published values for
+   the relevant physiology. The deployed parameter set is taken
+   as given.
+3. **Coverage of the realised parameter space.** The pipeline tests
+   one parameter point — the deployed defaults. It does not search
+   the surrounding parameter space to find regions where the model
+   would behave clinically wrongly. A small parameter perturbation
+   could in principle move the model into such a region, undetected.
+4. **Clinical expert review.** The pipeline does not involve a
+   sport-medicine, sleep-medicine, or endocrinology expert
+   asserting "yes, the parameter signs and magnitudes match what I
+   see in clinic". That review is necessary for genuine clinical
+   validity and is out of scope here.
+5. **Observation-model fidelity.** The vendored copy is the latent
+   dynamics only. The full upstream observation channels (HR /
+   sleep / stress / steps for SWAT; HR / sleep / stress / steps
+   for FSA) are not validated here — they're the concern of the
+   upstream filtering pipeline.
+
+**Practical consequence for downstream use.** The
+`<model>-validated-<date>-<sha>` tag means "the model has passed
+internal-consistency and identifiability gating against its own
+design intent". It does **not** mean "this model is clinically
+trustworthy". OT-Control vendoring blocks regression of the former;
+it does not certify the latter. Any clinical claim derived from a
+prescription the OT engine produces still carries the empirical-
+validation gap above.
+
+If a future user wants genuine clinical validity, they need:
+empirical model-fit against held-out clinical datasets;
+expert-physiologist review of the parameter values; comparison to
+established sport-science / chrono-medicine literature; and
+ideally a prospective study comparing optimised prescriptions to
+standard-of-care outcomes. None of that is in this repo.
+
+The deliverables below are the structural-gating discipline the
+repo *does* enforce.
+
+## Deliverable 1 — Structural gating tests
 
 **Location:** `tests/<model>/`
 
-**Form:** pytest test suite, ~10–25 tests, organised by structural
-property. Each test takes a `model` fixture and asserts a
-deterministic property that should hold across the model's healthy
-operating regime.
+**Form:** pytest test suite, ~10–25 tests, organised by the model's
+designed structural properties. Each test takes a `model` fixture
+and asserts a deterministic property the *model's design* says
+should hold under its deployed parameter values. These tests catch
+parameter-sign errors, equation regressions, and solver bugs.
+**They do not establish agreement with reality** — see the scope
+section above.
 
 **Minimum coverage:** every model must include tests for:
 
 - **Sign / direction.** Each control variable pushes the relevant
-  amplitude in the clinically expected direction (e.g. SWAT's V_h
-  is anabolic; FSA-high-res's T_B builds fitness B).
+  amplitude in the direction the model's design intent says it
+  should (e.g. SWAT's V_h is *designed* to be anabolic on T;
+  FSA-high-res's T_B is *designed* to drive B up). The test
+  confirms the deployed parameters preserve that designed sign;
+  it does not confirm the sign matches real physiology — that's
+  a separate empirical question.
 - **Monotonicity.** As a control increases monotonically across its
   range, the response is monotonic in the expected direction
   (SWAT's V_h-anabolicity test; FSA's T_B-builds-fitness test).
