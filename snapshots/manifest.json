@@ -26,6 +26,16 @@
           "notes": "Initial snapshot, hand-copied from Python-Model-OT-Control PR #7 (feature/fsa-adapter, v1.2.1). Source: version_1/_vendored_models/fsa_high_res/. The mu_0 = +0.02 deviation from v4.1 spec mu_0 = -0.3 is deliberate (deployed value tuned for the 14-day POC horizon). FIM rank 10/10 cond 1.69e+05 PASS; Lyapunov 5/5 corners PASS. Status pending validation tag once CI runs."
         }
       ]
+    },
+    "fsa_high_res": {
+      "snapshots": [
+        {
+          "upstream_sha": "hand-copied-from-OT-Control-feature/fsa-adapter-v1.2.1",
+          "captured_at": "2026-04-28T00:00:00+00:00",
+          "status": "pre-fix",
+          "notes": "Initial snapshot, hand-copied from Python-Model-OT-Control PR #7 (feature/fsa-adapter, v1.2.1). Source: version_1/_vendored_models/fsa_high_res/. The mu_0 = +0.02 deviation from v4.1 spec mu_0 = -0.3 is deliberate (deployed value tuned for the 14-day POC horizon). FIM rank 10/10 cond 1.69e+05 PASS; Lyapunov 5/5 corners PASS. Status pending validation tag once CI runs."
+        }
+      ]
     }
   }
 }
