@@ -18,7 +18,7 @@ Numerically, of the 4 binary corners of the (T_B, Φ) control box plus the healt
 | C3 | (1,    2)    | **−5.0**  | 0.000 | 0 | **PATHOLOGY** |
 | C4 | (0.5, 0.05)  | +0.157   | 0.887 | √(0.157/0.2) = 0.886 | healthy reference |
 
-**Every super-critical corner lands exactly on the Stuart-Landau curve `A* = √(μ/η)`.** Every pathology corner collapses to A = 0. The numerical confirmation is essentially perfect because the sub-system `dA/dt = μ A − η A³` for fixed μ is a textbook gradient flow.
+Every super-critical corner lands within ~1e-3 of the analytical Stuart-Landau curve `A* = √(μ/η)`. Every pathology corner collapses to A = 0 within numerical noise. The agreement is mechanical: for fixed μ, `dA/dt = μ A − η A³` is a one-dimensional gradient flow with a closed-form fixed point — the test is checking the diffrax solver against arithmetic, not validating the physiology.
 
 Acceptance for the script:
 

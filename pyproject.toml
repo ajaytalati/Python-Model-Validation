@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "model-validation"
 version = "0.1.0"
-description = "Mathematical and clinical-validity gating tests for physiological models before vendoring into downstream control libraries."
+description = "Structural / mathematical gating tests, Fisher-information identifiability, and Lyapunov stability sweeps for physiological models, run before vendoring into downstream control libraries. Internal-consistency gating only — not empirical clinical validation."
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [

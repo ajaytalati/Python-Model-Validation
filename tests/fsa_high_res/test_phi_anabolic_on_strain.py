@@ -1,33 +1,27 @@
-"""Does prescribing higher training intensity (Phi) actually produce strain?
+"""Is Phi designed-anabolic on strain, and does the deployed parameter set preserve that?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The model's design intent is that raising Phi (training intensity)
+drives F (simulated strain) up, and that Phi = 0 lets pre-existing
+F drain back toward zero. The drift `dF/dt = Phi − (drain_rate) · F`
+is structurally anabolic on F for any positive drain rate. The test
+confirms the deployed parameter set preserves the designed sign on
+both axes (strain accumulation under positive Phi, strain drain
+under zero Phi).
+
+What this test catches
+----------------------
+- A parameter regression that makes `tau_F` or one of its
+  multiplicative coupling coefficients (`lambda_B`, `lambda_A`)
+  produce a negative drain rate.
+- An equation regression where Phi is dropped or sign-flipped.
+
+What this test does NOT establish
 ---------------------------------
-"When I prescribe higher training intensity for my patient, does the
-model say their accumulated strain will rise over time?"
-
-Strain (F) is the model's representation of accumulated training load
-not yet absorbed into fitness — the residue of hard sessions that the
-body is still recovering from. Acute moderate strain is normal during
-training; chronic high strain is the precursor to overtraining.
-Clinicians need the model to say: "if I tell the patient to train
-harder (raise Phi), the simulated strain rises". Otherwise the
-model's notion of strain is decoupled from the prescribed intensity
-and any overtraining-risk prediction is meaningless.
-
-What the tests below assert
----------------------------
-1. **Higher Phi raises terminal strain** (test_phi_drives_strain_up).
-   The exact same patient under low-intensity vs high-intensity
-   prescriptions must end with the high-intensity arm carrying more
-   residual strain.
-
-2. **Zero Phi lets strain drain** (test_zero_phi_drains_strain).
-   A patient parked at zero training intensity must shed any
-   pre-existing strain over time. Convalescence, in clinical terms.
-
-If either fails, the strain channel is structurally disconnected from
-the intensity prescription, which would break every overtraining-risk
-calculation downstream.
+- That F as defined here corresponds to any real-world measure of
+  accumulated training stress.
+- That the magnitudes match real-world dose-response data.
 """
 from .conftest import terminal_state
 

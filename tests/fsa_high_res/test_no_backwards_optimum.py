@@ -1,40 +1,29 @@
-"""Is the prescription that maximises endocrine pulsatility clinically sensible?
+"""Do the parameter signs in mu(B, F) preserve the designed argmax structure?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The model is designed so that `mu(B, F) = mu_0 + mu_B·B − mu_F·F − mu_FF·F^2`
+is maximised when B is high and F is low. The terminal-amplitude
+landscape over (T_B, Phi) prescriptions therefore has its argmax in
+the high-T_B, low-Phi region (T_B drives B up, low Phi keeps F
+small). The tests confirm the deployed parameter signs preserve this
+designed argmax structure.
+
+What these tests catch
+----------------------
+- A parameter regression that flips a sign (mu_B turns catabolic, or
+  mu_F / mu_FF turn anabolic, or mu_0 dominates wrongly).
+- An equation regression that drops one of the four mu terms.
+- A solver regression that produces noisy terminal-A values
+  reordering the (T_B, Phi) ranking.
+
+What these tests do NOT establish
 ---------------------------------
-"If I asked the model 'what training prescription will give my
-patient the best endocrine pulsatility two months from now?', would
-the answer be a clinically sensible prescription?"
-
-The clinically-correct answer is roughly: a high training-load target
-combined with low-to-moderate training intensity. Push the patient to
-adapt (high T_B), but don't drown them in strain (low Phi).
-
-A model that instead recommends "high intensity, no fitness target" or
-"no training, no fitness" or "max everything" is broken. The optimal-
-control optimiser downstream would happily exploit such a regression.
-
-What the tests below assert
----------------------------
-1. **The argmax over a (T_B, Phi) sweep lies in the high-T_B,
-   low-Phi corner** (test_argmax_lies_in_high_t_b_low_phi_region).
-   On a 5x5 grid spanning (T_B, Phi) ∈ [0,1] x [0,2], the cell with
-   highest terminal A must be in the upper-half of T_B and the
-   lower-half of Phi.
-
-2. **The healthy reference outperforms doing nothing**
-   (test_healthy_reference_beats_doing_nothing).
-   Prescribing (T_B = 0.5, Phi = 0.05) — modest training — must yield
-   higher terminal A than (T_B = 0, Phi = 0) — no training. If the
-   patient is better off doing nothing than doing healthy moderate
-   training, the model has a clinical regression.
-
-3. **Overtrained corner is much worse than healthy regime**
-   (test_overtrained_corner_is_much_worse_than_healthy).
-   Terminal A at the overtrained corner (T_B = 1, Phi = 2) must be at
-   least 0.7 less than at the healthy reference. Catches a model
-   that fails to discriminate between a sustainable training plan and
-   an overtraining one.
+- That "high training-load target with low strain" is the
+  empirically optimal prescription for any real patient population.
+- That the gap magnitudes (e.g. 0.7 difference between healthy and
+  overtrained corners) correspond to clinically meaningful
+  differences in real biomarker outcomes.
 """
 import jax.numpy as jnp
 
