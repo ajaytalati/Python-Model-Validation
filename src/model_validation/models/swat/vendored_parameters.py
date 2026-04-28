@@ -84,7 +84,22 @@ def default_swat_parameters() -> Dict[str, float]:
     p['T_T'] = 0.0001 * _HOURS_PER_DAY    # 0.0024 / day
 
     # Observation-channel parameter (not used in OT drift/diffusion;
-    # included for traceability against upstream).
-    p['c_tilde'] = 2.5    # ← was 3.0; upstream re-tune 2026-04-26
+    # included for traceability against upstream).  Bumped 2.5 -> 3.0
+    # alongside the V_h-anabolic structural fix: under the corrected
+    # entrainment formula the healthy-regime W spends more time low
+    # (more sleep), so c_tilde=2.5 produced a sleep fraction ~45%
+    # (above the 25-40% clinical target band); 3.0 brings it back
+    # into range.
+    p['c_tilde'] = 3.0
+
+    # ── V_h-anabolic structural fix (upstream PR #11) ─────────────────
+    # V_h modulates entrainment amplitude rather than entering u_W
+    # directly. New estimable parameters:
+    p['lambda_amp_W'] = 5.0   # V_h gain into W-side amplitude
+    p['lambda_amp_Z'] = 8.0   # V_h gain into Z-side amplitude
+    p['V_n_scale']    = 2.0   # V_n damper scale
+    # Clinical constant (not estimable): any |V_c| >= V_c_max collapses
+    # the phase factor to 0.
+    p['V_c_max']      = 3.0
 
     return p
