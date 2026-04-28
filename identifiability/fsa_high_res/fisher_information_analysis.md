@@ -1,7 +1,7 @@
 # Fisher-Information Identifiability — FSA-high-res Model
 
 **Date:** 2026-04-27
-**Model version:** Vendored from OT-Control PR #7 (`feature/fsa-adapter`, v1.2.1) — `mu_0 = +0.02` (deployed) not `mu_0 = -0.3` (v4.1 spec).
+**Model version:** Vendored from OT-Control PR #7 (`feature/fsa-adapter`, v1.2.1).
 **Companion analysis:** [`stability/fsa_high_res/lyapunov_stability_analysis.md`](../../stability/fsa_high_res/lyapunov_stability_analysis.md)
 
 ## TL;DR
