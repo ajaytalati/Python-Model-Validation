@@ -1,31 +1,26 @@
-"""Does prescribing a higher fitness target (T_B) actually build fitness?
+"""Is T_B designed-anabolic on fitness, and does the deployed parameter set preserve that?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The model's design intent is that raising T_B (the prescribed
+training-load target) drives B (simulated fitness) up over time.
+This is encoded in the drift `dB/dt = (1 + alpha_A·A)/tau_B · (T_B − B)`,
+which is anabolic on B for any positive `tau_B`. The test confirms
+the deployed parameter set preserves the designed sign.
+
+What this test catches
+----------------------
+- A parameter regression that flips `tau_B` negative (which would
+  make T_B catabolic on B).
+- An equation regression where T_B is dropped from the drift or
+  enters with the wrong sign.
+
+What this test does NOT establish
 ---------------------------------
-"When I prescribe a higher training-load target for my patient, does the
-model say their fitness will climb over time?"
-
-This is the most basic clinical sanity check on the fitness pathway. A
-graded reconditioning programme — the canonical use case for the FSA
-model — tells the patient to target progressively higher training
-loads. If raising the target (T_B) didn't produce more fitness (B),
-every reconditioning prescription the model justifies would be
-backwards.
-
-What the tests below assert
----------------------------
-1. **Higher T_B builds more fitness** (test_t_b_drives_fitness_up).
-   A deconditioned patient simulated for two months under "no training
-   target" must end less fit than the same patient under "max
-   training target".
-
-2. **Zero T_B drains fitness** (test_zero_t_b_drains_fitness).
-   A previously-fit patient parked at "no training target" must lose
-   fitness over time. Sedentary deconditioning, in clinical terms.
-
-If either fails, the model's first-order prescription pathway is
-broken and downstream optimal-control recommendations cannot be
-trusted on this axis.
+- That `tau_B = 14 days` matches the real fitness-adaptation
+  timescale of any actual patient population.
+- That this designed pathway is what real training does to real
+  fitness.
 """
 from .conftest import terminal_state
 
