@@ -1,13 +1,9 @@
 name: FSA-high-res validation
 
-# Re-runs the FSA-high-res Fisher-information identifiability analysis
-# and the Lyapunov stability sweep whenever FSA model code changes.
-# Catches structural regressions before they reach OT-Control.
-#
-# NOTE: gating tests for FSA (tests/fsa_high_res/) are not yet written
-# — they're a follow-up to this PR. Once they land, add a third job
-# mirroring SWAT's gating-tests job. Until then this workflow gates on
-# identifiability + stability only.
+# Re-runs the FSA-high-res clinical-validity gating tests, the Fisher-
+# information identifiability analysis, and the Lyapunov stability
+# sweep whenever FSA model code changes. Catches structural regressions
+# before they reach OT-Control.
 
 on:
   push:
@@ -33,7 +29,41 @@ on:
 jobs:
 
   # ====================================================================
-  # JOB 1 — Identifiability + Lyapunov stability
+  # JOB 1 — Clinical-validity gating tests
+  # ====================================================================
+  # Runs the 16-test FSA gating suite. Each test probes one clinical-
+  # validity property the model is expected to obey (T_B is anabolic
+  # on fitness, Phi is anabolic on strain, overtraining cliff exists,
+  # etc.). ~1 sec on CPU. Always required.
+  # ====================================================================
+  gating-tests:
+    name: FSA gating tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install package + dev deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+        env:
+          JAX_PLATFORMS: cpu
+
+      - name: Run FSA gating tests
+        run: |
+          python -m pytest tests/fsa_high_res/ -v --tb=short
+        env:
+          JAX_PLATFORMS: cpu
+
+  # ====================================================================
+  # JOB 2 — Identifiability + Lyapunov stability
   # ====================================================================
   # Runs the FIM analysis (~5 min on CPU) and the 5-corner stability
   # sweep (~5 sec on CPU after JIT). Both are the same analyses that
@@ -45,6 +75,7 @@ jobs:
     name: Identifiability + Lyapunov stability
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: gating-tests           # don't burn cycles if gating already failed
     steps:
       - uses: actions/checkout@v4
 
@@ -100,7 +131,7 @@ jobs:
   tag-validated:
     name: Tag commit as validated
     runs-on: ubuntu-latest
-    needs: [identifiability-and-stability]
+    needs: [gating-tests, identifiability-and-stability]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
