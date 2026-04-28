@@ -14,9 +14,9 @@
 
 This repo's convention is `vendored_*.py` (matches SWAT in `src/model_validation/models/swat/`). The upstream OT-Control vendoring uses unprefixed names (`dynamics_jax.py`, `parameters.py`); the rename is cosmetic — function names inside (`fsa_drift`, `fsa_diffusion`, `default_fsa_parameters`, etc.) are unchanged.
 
-## Notable deviations from spec
+## Implementation notes
 
-The deployed `mu_0 = +0.02` is **not** the v4.1 spec value `mu_0 = -0.3`. The OT-Control vendoring deliberately bumps `mu_0` so that `μ(B, F)` stays super-critical across the 14-day POC horizon — the spec value would require a bifurcation crossing during recovery, too cold for a 14-day window. **The validation analyses (FIM, Lyapunov) operate on the deployed `mu_0 = +0.02`, not the spec value.**
+The deployed `mu_0 = +0.02` keeps `μ(B, F)` super-critical across the 14-day POC horizon, putting A near the Stuart-Landau fixed point sqrt(μ/η) of roughly 0.7 mid-run.
 
 The diffusion is regularised eps-under-sqrt (rather than upstream's clip-then-sqrt) so JAX-AD gradients stay finite at the boundary. Mathematically equivalent for x well inside (0, 1); structurally important for the FIM Jacobian computation.
 
