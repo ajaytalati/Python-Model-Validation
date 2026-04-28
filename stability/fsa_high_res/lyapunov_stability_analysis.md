@@ -28,7 +28,7 @@ Acceptance for the script:
 | C4 (healthy ref): A(D) > 0.6 | 0.887 | ✓ |
 | C1 (overtrained-no-fit): A(D) < 0.1 | 0.000 | ✓ |
 | C3 (overtrained-max-fit): A(D) < 0.1 | 0.000 | ✓ |
-| IC sweep at C4: range over 32 ICs < 0.3 | **0.001** | ✓ |
+| IC sweep at C4: spread (max−min) of A(D) over 32 ICs < 0.3 | **0.001** (interval [0.886, 0.888]) | ✓ |
 
 **OVERALL: PASS.**
 
@@ -97,7 +97,7 @@ This is the headline plot. Five trajectories laid on the (μ, A) plane:
 
 ![IC sweep](https://raw.githubusercontent.com/ajaytalati/Python-Model-Validation/main/stability/fsa_high_res/results/init_cond_sweep.png)
 
-**All 32 random initial conditions converge to A(D) ∈ [0.886, 0.888]** — range 0.001, std 0.0002. The basin of attraction of the C4 healthy reference covers the entire physical state space `(B_0, F_0, A_0) ∈ [0, 1]² × [0, 1.5]`. There is no IC inside that box from which the system fails to reach C4's healthy attractor.
+**All 32 random initial conditions converge to A(D) ∈ [0.886, 0.888]** — i.e. the spread (max − min) of the 32 terminal-A values is 0.001, std 0.0002. (To avoid a terminology trap: the *value* of A(D) is ~0.887 across all 32 ICs; the *spread* among those values is 0.001.) The basin of attraction of the C4 healthy reference covers the entire physical state space `(B_0, F_0, A_0) ∈ [0, 1]² × [0, 1.5]`. There is no IC inside that box from which the system fails to reach C4's healthy attractor.
 
 ## Analytical Lyapunov function
 
@@ -153,7 +153,7 @@ These three observations transfer to the OT-Control PR #7 thread.
 | C4 healthy reference A(D) | > 0.6 | 0.887 | ✓ |
 | C1 overtrained-no-fit A(D) | < 0.1 | 0.000 | ✓ |
 | C3 overtrained-max-fit A(D) | < 0.1 | 0.000 | ✓ |
-| IC sweep at C4: range over 32 ICs | < 0.3 | 0.001 | ✓ |
+| IC sweep at C4: spread (max−min) of A(D) over 32 ICs | < 0.3 | 0.001 (all 32 ICs land near A=0.887) | ✓ |
 
 **ACCEPTANCE: PASS.** All 5 deterministic gates met; stochastic confirms no escape; analytical Stuart-Landau matches numerical to ~10⁻³.
 
