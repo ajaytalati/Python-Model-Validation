@@ -1,39 +1,31 @@
-"""Does the model predict an overtraining cliff at high training intensity?
+"""Does the F^2 term in mu(B, F) actually produce an amplitude cliff?
 
-Clinician's question being tested
+Question being tested
+---------------------
+The model's design encodes an overtraining cliff via the `−mu_FF·F^2`
+term in `mu(B, F)` (the F^2 dominates at high F and pulls mu
+negative, which collapses A through the Stuart-Landau dynamics).
+The tests confirm two structural consequences of that design:
+
+1. At max prescribed intensity (Phi = 2), the simulated amplitude
+   collapses regardless of fitness target.
+2. Holding T_B fixed, raising Phi only ever reduces A (no rise then
+   fall on the Phi-only axis — the rise-then-fall intuition lives on
+   the coupled (T_B, Phi) axis, which is not probed here).
+
+What this test catches
+----------------------
+- A parameter regression that sets `mu_FF` to zero or wrong sign
+  (the cliff disappears).
+- An equation regression that drops the F^2 term.
+- A solver regression that produces non-monotonic noise on a
+  designed-monotonic axis.
+
+What this test does NOT establish
 ---------------------------------
-"If I push my patient's training intensity past the overtraining
-threshold, does the model predict their endocrine pulsatility
-collapses?"
-
-This is the FSA model's key clinical claim: low-to-moderate strain is
-healthy, but strain past a threshold (the F^2 term in mu(B, F))
-collapses the endocrine amplitude A toward zero. A clinician using
-the model to plan periodisation must trust this prediction —
-otherwise the overtraining-risk calculation that the model is
-supposed to provide is fictional.
-
-What the tests below assert
----------------------------
-1. **Sustained max training intensity collapses amplitude**
-   (test_high_phi_collapses_amplitude).
-   Whatever the patient's fitness target (T_B), if training intensity
-   is held at the upper bound (Phi = 2) for two months, the model
-   must predict near-zero terminal endocrine amplitude.
-
-2. **Phi is monotonically catabolic on amplitude**
-   (test_phi_is_monotonically_catabolic_on_amplitude).
-   Holding the fitness target fixed at the healthy reference (T_B = 0.5),
-   the predicted terminal amplitude A(D) must decrease monotonically
-   as Phi sweeps from 0 (rest) to 2 (max). At fixed T_B, more strain
-   never helps endocrine pulsatility — strain only burdens it. (The
-   clinical "moderate training is best" intuition lives on a different
-   axis where T_B and Phi rise together; that's not what this test
-   probes.)
-
-If either fails, the model has no overtraining cliff and the
-"periodisation matters" claim that the model is supposed to support
-is empty.
+- That the cliff threshold corresponds to any real-world overtraining
+  threshold.
+- That the cliff shape (sharp vs gradual) matches real-world data.
 """
 import jax.numpy as jnp
 

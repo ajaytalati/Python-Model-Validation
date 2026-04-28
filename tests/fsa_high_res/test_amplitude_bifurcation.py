@@ -1,23 +1,25 @@
-"""Does the model's amplitude obey the bifurcation it claims to obey?
+"""Does the model's amplitude obey the bifurcation the model claims to obey?
 
-Clinician's question being tested
----------------------------------
-"When the model says my patient's bifurcation parameter is positive,
-does the simulated endocrine amplitude actually settle at the
-predicted Stuart-Landau equilibrium? When the bifurcation parameter
-goes negative, does the amplitude actually collapse?"
+Question being tested
+---------------------
+"When the model's bifurcation parameter mu(B, F) is positive at the
+long-time state, does the simulated endocrine amplitude actually
+settle at the analytical Stuart-Landau equilibrium A* = sqrt(mu / eta)?
+When the bifurcation parameter is negative, does the amplitude
+actually collapse to zero?"
 
-This is the deepest of the clinical-validity tests. The model claims
-that the patient's clinical state — fitness B and strain F — combine
-into a single bifurcation parameter mu(B, F):
+This is a check on internal mathematical consistency between two
+parts of the model:
 
-    mu(B, F)  >  0   =>   healthy attractor at A* = sqrt(mu / eta)
-    mu(B, F)  <=  0  =>   collapse to A = 0
+    - the analytical claim    A* = sqrt(mu / eta)   (when mu > 0)
+    - what the simulator      A(D) at long time D
+      actually returns
 
-Everything the model says about "healthy" vs "overtrained" lives in
-this single mu sign. So a clinical-validity gating suite must
-explicitly check that the model's amplitude *actually does* land where
-the bifurcation parameter says it lands.
+A failure here means either the simulator is buggy or the parameter
+values used in the analytical formula don't match what the simulator
+sees. It does NOT establish that mu > 0 corresponds to "clinically
+healthy" in any external sense — that's the model's design assertion,
+which the test takes as given.
 
 What the tests below assert
 ---------------------------

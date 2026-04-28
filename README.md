@@ -1,10 +1,26 @@
 # Python-Model-Validation
 
-Rigorous mathematical and clinical-validity gating for physiological models, sitting between the model-definition repo ([Python-Model-Development-Simulation](https://github.com/ajaytalati/Python-Model-Development-Simulation)) and the optimal-control repo ([Python-Model-OT-Control](https://github.com/ajaytalati/Python-Model-OT-Control)).
+Structural / mathematical gating for physiological models, sitting between the model-definition repo ([Python-Model-Development-Simulation](https://github.com/ajaytalati/Python-Model-Development-Simulation)) and the optimal-control repo ([Python-Model-OT-Control](https://github.com/ajaytalati/Python-Model-OT-Control)).
 
-**Why this repo exists.** The model-definition repo contains the model SDE, parameters, and ad-hoc verification scripts. It does *not* check that each control variable behaves the way its clinical interpretation says it should. When the model is vendored downstream into a control-optimisation framework, those controls are promoted from per-subject *constants* to *time-varying optimisable controls* — and the optimiser will exploit any clinically-inverted gradient. See [Python-Model-OT-Control issue #4](https://github.com/ajaytalati/Python-Model-OT-Control/issues/4) for the case study that motivated this library.
+**Why this repo exists.** The model-definition repo contains the model SDE, parameters, and ad-hoc verification scripts. It does *not* check that each control variable preserves the qualitative direction the model's design intent says it should. When the model is vendored downstream into a control-optimisation framework, those controls are promoted from per-subject *constants* to *time-varying optimisable controls* — and the optimiser will exploit any sign-flipped gradient. See [Python-Model-OT-Control issue #4](https://github.com/ajaytalati/Python-Model-OT-Control/issues/4) for the case study that motivated this library.
 
-This library applies a battery of monotonicity and clinical-scenario tests to every upstream snapshot. Vendoring downstream is only allowed from snapshots that pass.
+This library applies a battery of structural-gating tests, a Fisher-information identifiability analysis, and a Lyapunov stability sweep to every upstream snapshot. Vendoring downstream is only allowed from snapshots that pass.
+
+## Scope
+
+Read this before you read anything else. The discipline this repo enforces is **structural / mathematical**, not empirical-clinical:
+
+- It checks that the model's equations + the deployed parameters jointly produce the qualitative behaviours the model was *designed* to produce.
+- It checks that the model's parameters are jointly identifiable.
+- It checks that the model has a bounded-orbit attractor under constant controls.
+
+It does **not**:
+- Compare model predictions to real patient data, real training logs, or any external clinical reality.
+- Verify that timescales, coupling coefficients, or amplitude scales match published values for the relevant physiology.
+- Search the surrounding parameter space — it tests one parameter point, the deployed defaults.
+- Replace clinical expert review of the parameter choices.
+
+The `<model>-validated-<date>-<sha>` tag means the model has passed internal-consistency gating against its own design intent. It does not mean the model is clinically trustworthy. See [`how_to_add_a_new_validation_model/02_validation_contract.md`](how_to_add_a_new_validation_model/02_validation_contract.md) for the full scope-and-limitations statement.
 
 ## Layout
 
